@@ -40,10 +40,14 @@ class Player(pg.sprite.Sprite):
         self.left_pressed = False
         self.right_pressed = False
         self.speed = 8
+        self.points = 0
+        self.font = pg.font.SysFont("Arial", 36)
+        self.text = self.font.render(f"Score: {self.points}", True, (0,0,0))
 
     def draw(self, display):
         pg.draw.rect(display, self.playerColor, self.player)
         screen.blit(self.image, (self.rect.x, self.rect.y - 30))
+
 
     def move(self):
         self.vel = pg.Vector2(0,0)
@@ -71,6 +75,8 @@ colorSelection = [
     (252, 40, 224)
 ]
 
+
+
 class Fruits(pg.sprite.Sprite):
     def __init__(self, col, x, y):
         pg.sprite.Sprite.__init__(self)
@@ -78,30 +84,21 @@ class Fruits(pg.sprite.Sprite):
         self.image.fill(col)
         self.rect = self.image.get_rect()
         self.rect.center = (x, y)
-        self.points = 0
-        self.font = pg.font.SysFont("Arial", 36)
-        self.text = self.font.render(f"Score: {self.points}", True, (0,0,0))
-
-    def text_update(self):
-        self.text = self.font.render(f"Score: {self.points}", True, (0,0,0))
-        screen.blit(self.text, (20, 20))
-        self.points += 1
 
     def update(self, x, y):
         self.rect.move_ip(0, 5)
 
         if pg.sprite.collide_rect(self, player):
             self.kill()
+            add = 1
             self.rect.center = (x, y)
             fruit_group.add(fruits)
         else:
             if self.rect.top > HEIGHT:
                 self.kill()
-                self.points -= 1
-                print(self.points)
+                add = 0
                 self.rect.center = (x, y)
                 fruit_group.add(fruits)
-
 
 
 #class func config
@@ -142,10 +139,8 @@ while running:
     fruits = Fruits(random.choice(colorSelection), randint(30, WIDTH - 30), 55)
     player.draw(screen)
     fruit_group.draw(screen)
-    fruits.text_update()
 
     player.move()
-    player.update()
     fruit_group.update(randint(30, WIDTH - 30), 55)
 
     pg.display.flip()
