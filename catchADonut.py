@@ -1,29 +1,41 @@
 from os import environ
 from random import randint
+import random
 
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1'
 
 import pygame as pg
 import time
 
+#screen size
 WIDTH = 550
 HEIGHT = 960
 
+#window config
 pg.init()
 pg.font.init()
 screen = pg.display.set_mode((WIDTH, HEIGHT))
 clock = pg.time.Clock()
 running = True
 
-
-class Player:
+class Player(pg.sprite.Sprite):
     def __init__(self, x, y):
-        self.player = pg.Rect(x, y, 70, 70)
-        self.basket = pg.Rect(x - 50, y + 30, 70, 10)
-        self.playerColor = (136, 29, 242)
+        pg.sprite.Sprite.__init__(self)
+        #player rect + colors
         self.basketColor = (64, 45, 1)
-        self.x = x
-        self.y = y
+        self.playerColor = (136, 29, 242)
+        self.player = pg.Rect(x, y, 70, 70)
+
+        #basket sprite var
+        self.image = pg.Surface((70, 10))
+        self.image.fill(self.basketColor)
+        self.rect = self.image.get_rect()
+
+        #location
+        self.rect.x = x
+        self.rect.y = y
+
+        # movement variables
         self.vel = pg.Vector2(0, 0)
         self.left_pressed = False
         self.right_pressed = False
@@ -31,9 +43,9 @@ class Player:
 
     def draw(self, display):
         pg.draw.rect(display, self.playerColor, self.player)
-        pg.draw.rect(display, self.basketColor, self.basket)
+        screen.blit(self.image, (self.rect.x, self.rect.y - 30))
 
-    def update(self):
+    def move(self):
         self.vel = pg.Vector2(0,0)
 
         if self.left_pressed and not self.right_pressed:
@@ -44,10 +56,12 @@ class Player:
         if self.vel != (0,0):
             self.vel.normalize_ip()
 
-        self.x += self.vel[0] * self.speed
+        self.rect.x += self.vel[0] * self.speed
 
-        self.player = pg.Rect(int(self.x), int(self.y), 70, 70)
-        self.basket = pg.Rect(int(self.x), int(self.y - 30), 70, 10)
+        self.player = pg.Rect(int(self.rect.x), int(self.rect.y), 70, 70)
+        self.image = pg.Surface((70, 10))
+        self.image.fill(self.basketColor)
+
 
 colorSelection = [
     (79, 235, 40),
@@ -57,46 +71,50 @@ colorSelection = [
     (252, 40, 224)
 ]
 
-color = colorSelection[randint(0, 4)]
-
-class ObjectSpawn:
-    def __init__(self, x ,y):
-        self.x = randint(30, WIDTH - 30)
-        self.y = y
+class Fruits(pg.sprite.Sprite):
+    def __init__(self, col, x, y):
+        pg.sprite.Sprite.__init__(self)
+        self.image = pg.Surface((50, 50))
+        self.image.fill(col)
+        self.rect = self.image.get_rect()
+        self.rect.center = (x, y)
         self.points = 0
         self.font = pg.font.SysFont("Arial", 36)
         self.text = self.font.render(f"Score: {self.points}", True, (0,0,0))
-        self.speed = 200
-        self.vel = pg.Vector2(0,0)
-        self.score = 0
-        self.object = pg.Rect(x, y, 30, 30)
 
-    def draw(self, display):
-        pg.draw.rect(display, color, self.object)
-        screen.blit(self.text, (20, 20))
-
-    def update(self, delta, playerobj):
+    def text_update(self):
         self.text = self.font.render(f"Score: {self.points}", True, (0,0,0))
-
-        if self.object.colliderect(playerobj):
-            self.points += 1
-            self.y = 0
-            self.x = randint(30, WIDTH - 30)
-        else:
-            if self.y < HEIGHT:
-                self.y += self.speed * delta
-            else:
-                self.points -= 1
-                self.y = 0
-                self.x = randint(30, WIDTH - 30)
-
-        self.object = pg.Rect(int(self.x), int(self.y), 30, 30)
         screen.blit(self.text, (20, 20))
+        self.points += 1
+
+    def update(self, x, y):
+        self.rect.move_ip(0, 5)
+
+        if pg.sprite.collide_rect(self, player):
+            self.kill()
+            self.rect.center = (x, y)
+            fruit_group.add(fruits)
+        else:
+            if self.rect.top > HEIGHT:
+                self.kill()
+                self.points -= 1
+                print(self.points)
+                self.rect.center = (x, y)
+                fruit_group.add(fruits)
 
 
+
+#class func config
 player = Player(WIDTH/2, HEIGHT - 80)
-objects = ObjectSpawn(30, 10)
+players = pg.sprite.Group()
+fruits = Fruits(random.choice(colorSelection), randint(30, WIDTH - 30), 55)
+
+#for dt
 prev_time = time.time()
+
+#sprite group
+fruit_group = pg.sprite.Group()
+fruit_group.add(fruits)
 
 while running:
     current_time = time.time()
@@ -121,11 +139,14 @@ while running:
 
     screen.fill((222, 197, 124))
 
+    fruits = Fruits(random.choice(colorSelection), randint(30, WIDTH - 30), 55)
     player.draw(screen)
-    objects.draw(screen)
+    fruit_group.draw(screen)
+    fruits.text_update()
 
+    player.move()
     player.update()
-    objects.update(dt, player.basket)
+    fruit_group.update(randint(30, WIDTH - 30), 55)
 
     pg.display.flip()
     clock.tick(60)
