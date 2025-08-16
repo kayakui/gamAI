@@ -61,7 +61,7 @@ color = colorSelection[randint(0, 4)]
 
 class ObjectSpawn:
     def __init__(self, x ,y):
-        self.x = x
+        self.x = randint(30, WIDTH - 30)
         self.y = y
         self.points = 0
         self.font = pg.font.SysFont("Arial", 36)
@@ -70,13 +70,6 @@ class ObjectSpawn:
         self.vel = pg.Vector2(0,0)
         self.score = 0
         self.object = pg.Rect(x, y, 30, 30)
-        self.colorSelection = [
-            (79, 235, 40),
-            (245, 255, 61),
-            (245, 37, 78),
-            (255, 33, 13),
-            (252, 40, 224)
-        ]
 
     def draw(self, display):
         pg.draw.rect(display, color, self.object)
@@ -88,26 +81,27 @@ class ObjectSpawn:
         if self.object.colliderect(playerobj):
             self.points += 1
             self.y = 0
+            self.x = randint(30, WIDTH - 30)
         else:
-            if self.y > (HEIGHT * -1):
+            if self.y < HEIGHT:
                 self.y += self.speed * delta
+            else:
+                self.points -= 1
+                self.y = 0
+                self.x = randint(30, WIDTH - 30)
 
         self.object = pg.Rect(int(self.x), int(self.y), 30, 30)
         screen.blit(self.text, (20, 20))
 
+
 player = Player(WIDTH/2, HEIGHT - 80)
-objects = ObjectSpawn(WIDTH/2, 10)
+objects = ObjectSpawn(30, 10)
 prev_time = time.time()
-
-
-
 
 while running:
     current_time = time.time()
     dt = current_time - prev_time
     prev_time = current_time
-
-
 
     for event in pg.event.get():
         if event.type == pg.QUIT:
@@ -125,8 +119,6 @@ while running:
             if event.key == pg.K_RIGHT:
                 player.right_pressed = False
 
-    pg.display.flip()
-    clock.tick(60)
     screen.fill((222, 197, 124))
 
     player.draw(screen)
@@ -134,6 +126,9 @@ while running:
 
     player.update()
     objects.update(dt, player.basket)
+
+    pg.display.flip()
+    clock.tick(60)
 
 pg.quit()
 
