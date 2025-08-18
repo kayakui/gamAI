@@ -40,9 +40,6 @@ class Player(pg.sprite.Sprite):
         self.left_pressed = False
         self.right_pressed = False
         self.speed = 8
-        self.points = 0
-        self.font = pg.font.SysFont("Arial", 36)
-        self.text = self.font.render(f"Score: {self.points}", True, (0,0,0))
 
     def draw(self, display):
         pg.draw.rect(display, self.playerColor, self.player)
@@ -66,7 +63,6 @@ class Player(pg.sprite.Sprite):
         self.image = pg.Surface((70, 10))
         self.image.fill(self.basketColor)
 
-
 colorSelection = [
     (79, 235, 40),
     (245, 255, 61),
@@ -75,7 +71,9 @@ colorSelection = [
     (252, 40, 224)
 ]
 
-
+points = 0
+font = pg.font.SysFont("Arial", 36)
+text = font.render(f"Score: {points}", True, (0,0,0))
 
 class Fruits(pg.sprite.Sprite):
     def __init__(self, col, x, y):
@@ -83,27 +81,37 @@ class Fruits(pg.sprite.Sprite):
         self.image = pg.Surface((50, 50))
         self.image.fill(col)
         self.rect = self.image.get_rect()
-        self.rect.center = (x, y)
+        self.rect.y = y - 50
+        self.rect.x = x
 
     def update(self, x, y):
         self.rect.move_ip(0, 5)
 
         if pg.sprite.collide_rect(self, player):
             self.kill()
-            add = 1
-            self.rect.center = (x, y)
+            self.rect.y = 0
             fruit_group.add(fruits)
         else:
             if self.rect.top > HEIGHT:
                 self.kill()
-                add = 0
-                self.rect.center = (x, y)
+                self.rect.y = 0
                 fruit_group.add(fruits)
+
+    def update_score(self):
+        ...
+
+
+
+
+def update_score():
+    pass
+
+def draw_score():
+    screen.blit(text, (20, 20))
 
 
 #class func config
 player = Player(WIDTH/2, HEIGHT - 80)
-players = pg.sprite.Group()
 fruits = Fruits(random.choice(colorSelection), randint(30, WIDTH - 30), 55)
 
 #for dt
@@ -139,9 +147,11 @@ while running:
     fruits = Fruits(random.choice(colorSelection), randint(30, WIDTH - 30), 55)
     player.draw(screen)
     fruit_group.draw(screen)
+    draw_score()
 
     player.move()
     fruit_group.update(randint(30, WIDTH - 30), 55)
+    fruits.update_score()
 
     pg.display.flip()
     clock.tick(60)
