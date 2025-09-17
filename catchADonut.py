@@ -21,13 +21,12 @@ running = True
 class Player(pg.sprite.Sprite):
     def __init__(self, x, y):
         pg.sprite.Sprite.__init__(self)
-        #player rect + colors
+
+        #color
         self.basketColor = (64, 45, 1)
-        self.playerColor = (136, 29, 242)
-        self.player = pg.Rect(x, y, 70, 70)
 
         #basket sprite var
-        self.image = pg.Surface((70, 10))
+        self.image = pg.Surface((70, 70))
         self.image.fill(self.basketColor)
         self.rect = self.image.get_rect()
 
@@ -42,9 +41,7 @@ class Player(pg.sprite.Sprite):
         self.speed = 8
 
     def draw(self, display):
-        pg.draw.rect(display, self.playerColor, self.player)
-        screen.blit(self.image, (self.rect.x, self.rect.y - 30))
-
+        screen.blit(self.image, (self.rect.x, self.rect.y))
 
     def move(self):
         self.vel = pg.Vector2(0,0)
@@ -59,7 +56,6 @@ class Player(pg.sprite.Sprite):
 
         self.rect.x += self.vel[0] * self.speed
 
-        self.player = pg.Rect(int(self.rect.x), int(self.rect.y), 70, 70)
         self.image = pg.Surface((70, 10))
         self.image.fill(self.basketColor)
 
@@ -71,55 +67,55 @@ colorSelection = [
     (252, 40, 224)
 ]
 
-points = 0
-font = pg.font.SysFont("Arial", 36)
-text = font.render(f"Score: {points}", True, (0,0,0))
+class ObjectSpawn:
+    def __init__(self, x ,y):
+        self.x = randint(30, WIDTH - 30)
+        self.y = y
+        self.points = 0
+        self.font = pg.font.SysFont("Arial", 36)
+        self.text = self.font.render(f"Score: {self.points}", True, (0,0,0))
+        self.color = random.choice(colorSelection)
+        self.speed = 5
+        self.vel = pg.Vector2(0,0)
+        self.score = 0
+        self.object = pg.Rect(x, y, 30, 30)
 
-class Fruits(pg.sprite.Sprite):
-    def __init__(self, col, x, y):
-        pg.sprite.Sprite.__init__(self)
-        self.image = pg.Surface((50, 50))
-        self.image.fill(col)
-        self.rect = self.image.get_rect()
-        self.rect.y = y - 50
-        self.rect.x = x
+    def draw(self, display):
+        pg.draw.rect(display, self.color, self.object)
+        screen.blit(self.text, (20, 20))
 
-    def update(self, x, y):
-        self.rect.move_ip(0, 5)
+    def update(self, playerobj):
+        self.text = self.font.render(f"Score: {self.points}", True, (0,0,0))
 
-        if pg.sprite.collide_rect(self, player):
-            self.kill()
-            self.rect.y = 0
-            fruit_group.add(fruits)
+        if self.object.colliderect(playerobj):
+            self.points += 1
+            self.y = 0
+            self.x = randint(30, WIDTH - 30)
+            self.color = random.choice(colorSelection)
         else:
-            if self.rect.top > HEIGHT:
-                self.kill()
-                self.rect.y = 0
-                fruit_group.add(fruits)
-
-    def update_score(self):
-        ...
-
-
+            if self.y < HEIGHT:
+                self.y += self.speed
+            else:
+                self.points -= 1
+                self.y = 0
+                self.x = randint(30, WIDTH - 30)
+                self.color = random.choice(colorSelection)
 
 
-def update_score():
-    pass
+        self.object = pg.Rect(int(self.x), int(self.y), 30, 30)
+        screen.blit(self.text, (20, 20))
 
-def draw_score():
-    screen.blit(text, (20, 20))
+
+
 
 
 #class func config
 player = Player(WIDTH/2, HEIGHT - 80)
-fruits = Fruits(random.choice(colorSelection), randint(30, WIDTH - 30), 55)
+objects = ObjectSpawn(30, 10)
 
 #for dt
 prev_time = time.time()
 
-#sprite group
-fruit_group = pg.sprite.Group()
-fruit_group.add(fruits)
 
 while running:
     current_time = time.time()
@@ -144,14 +140,12 @@ while running:
 
     screen.fill((222, 197, 124))
 
-    fruits = Fruits(random.choice(colorSelection), randint(30, WIDTH - 30), 55)
     player.draw(screen)
-    fruit_group.draw(screen)
-    draw_score()
+    objects.draw(screen)
+    objects.update(player.rect)
+
 
     player.move()
-    fruit_group.update(randint(30, WIDTH - 30), 55)
-    fruits.update_score()
 
     pg.display.flip()
     clock.tick(60)
