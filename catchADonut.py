@@ -1,6 +1,7 @@
 from os import environ
 from random import randint
 import random
+from time import sleep
 
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1'
 
@@ -17,6 +18,9 @@ pg.font.init()
 screen = pg.display.set_mode((WIDTH, HEIGHT))
 clock = pg.time.Clock()
 running = True
+
+FREE, RETRY = 0, 1
+state = FREE
 
 class Player(pg.sprite.Sprite):
     def __init__(self, x, y):
@@ -79,6 +83,7 @@ class ObjectSpawn:
         self.vel = pg.Vector2(0,0)
         self.score = 0
         self.object = pg.Rect(x, y, 30, 30)
+        self.state = state
 
     def draw(self, display):
         pg.draw.rect(display, self.color, self.object)
@@ -106,15 +111,32 @@ class ObjectSpawn:
         screen.blit(self.text, (20, 20))
 
 
+class RetryObj:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        self.button = pg.Rect(x, y, 200, 70)
+        self.font = pg.font.SysFont("Arial", 36)
+        self.text = self.font.render(f"Try Again!", True, (0,0,0))
+        self.color = (245, 17, 20)
+
+    def draw(self, display):
+        pg.draw.rect(display, self.color, self.button)
+        screen.blit(self.text, (self.x, self.y))
+
+
+
 
 
 
 #class func config
 player = Player(WIDTH/2, HEIGHT - 80)
 objects = ObjectSpawn(30, 10)
+retryBtn = RetryObj(WIDTH/2, HEIGHT/2)
 
 #for dt
 prev_time = time.time()
+
 
 
 while running:
@@ -140,12 +162,23 @@ while running:
 
     screen.fill((222, 197, 124))
 
-    player.draw(screen)
-    objects.draw(screen)
-    objects.update(player.rect)
+    if objects.points >= 0:
+        state = FREE
+    else:
+        state = RETRY
 
 
-    player.move()
+    if state == FREE:
+        player.draw(screen)
+        objects.draw(screen)
+        objects.update(player.rect)
+        player.move()
+    elif state == RETRY:
+        retryBtn.draw(screen)
+
+#make onclick in retry to make a game go again
+
+
 
     pg.display.flip()
     clock.tick(60)
