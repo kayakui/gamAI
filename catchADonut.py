@@ -73,24 +73,39 @@ colorSelection = [
 
 class ObjectSpawn:
     def __init__(self, x ,y):
+        #placement
         self.x = randint(30, WIDTH - 30)
         self.y = y
+
+        #score
         self.points = 0
+        self.misses = 0
+        #text
         self.font = pg.font.SysFont("Arial", 36)
-        self.text = self.font.render(f"Score: {self.points}", True, (0,0,0))
+        self.text_points = self.font.render(f"Score: {self.points}", True, (0,0,0))
+        self.text_misses = self.font.render(f"Misses: {self.misses}", True, (0,0,0))
+
+        #random color for fruit
         self.color = random.choice(colorSelection)
+
+        #move params
         self.speed = 5
         self.vel = pg.Vector2(0,0)
-        self.score = 0
+
+        #object
         self.object = pg.Rect(x, y, 30, 30)
-        self.state = state
+
 
     def draw(self, display):
+        #fruits
         pg.draw.rect(display, self.color, self.object)
-        screen.blit(self.text, (20, 20))
+        #text
+        screen.blit(self.text_points, (20, 20))
+        screen.blit(self.text_misses, (20, 80))
 
     def update(self, playerobj):
-        self.text = self.font.render(f"Score: {self.points}", True, (0,0,0))
+        self.text_points = self.font.render(f"Score: {self.points}", True, (0,0,0))
+        self.text_misses = self.font.render(f"Misses: {self.misses}", True, (0,0,0))
 
         if self.object.colliderect(playerobj):
             self.points += 1
@@ -101,29 +116,15 @@ class ObjectSpawn:
             if self.y < HEIGHT:
                 self.y += self.speed
             else:
-                self.points -= 1
+                self.misses += 1
                 self.y = 0
                 self.x = randint(30, WIDTH - 30)
                 self.color = random.choice(colorSelection)
 
 
         self.object = pg.Rect(int(self.x), int(self.y), 30, 30)
-        screen.blit(self.text, (20, 20))
-
-
-class RetryObj:
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
-        self.button = pg.Rect(x, y, 200, 70)
-        self.font = pg.font.SysFont("Arial", 36)
-        self.text = self.font.render(f"Try Again!", True, (0,0,0))
-        self.color = (245, 17, 20)
-
-    def draw(self, display):
-        pg.draw.rect(display, self.color, self.button)
-        screen.blit(self.text, (self.x, self.y))
-
+        screen.blit(self.text_points, (20, 20))
+        screen.blit(self.text_misses, (20, 80))
 
 
 
@@ -132,13 +133,28 @@ class RetryObj:
 #class func config
 player = Player(WIDTH/2, HEIGHT - 80)
 objects = ObjectSpawn(30, 10)
-retryBtn = RetryObj(WIDTH/2, HEIGHT/2)
+
+def game_difficulty(x):
+    match x:
+        case 1:
+            objects.speed = 10
+        case 2:
+            objects.speed = 5
+        case 3:
+            objects.speed = 7
+        case 4:
+            objects.speed = 9
+        case 5:
+            objects.speed = 12
+        case _:
+            objects.speed = 3
+
+difficulty = 0
 
 #for dt
 prev_time = time.time()
 
-
-
+#game loop
 while running:
     current_time = time.time()
     dt = current_time - prev_time
@@ -160,25 +176,25 @@ while running:
             if event.key == pg.K_RIGHT:
                 player.right_pressed = False
 
+    #null the score if too much misses
+    if objects.misses >= 3:
+        objects.points = 0
+        objects.misses = 0
+
+    if objects.points % 2 == 0 and objects.points > 0:
+        difficulty = difficulty+ 1
+        print(difficulty)
+
+    game_difficulty(difficulty)
+
+
+    #main game func
     screen.fill((222, 197, 124))
 
-    if objects.points >= 0:
-        state = FREE
-    else:
-        state = RETRY
-
-
-    if state == FREE:
-        player.draw(screen)
-        objects.draw(screen)
-        objects.update(player.rect)
-        player.move()
-    elif state == RETRY:
-        retryBtn.draw(screen)
-
-#make onclick in retry to make a game go again
-
-
+    player.draw(screen)
+    objects.draw(screen)
+    objects.update(player.rect)
+    player.move()
 
     pg.display.flip()
     clock.tick(60)
